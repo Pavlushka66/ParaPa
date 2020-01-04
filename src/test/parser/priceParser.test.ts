@@ -37,6 +37,14 @@ test("parse replace <sup> to .", () => {
     expect (clearPrice("1<sup>20</sup>")).toStrictEqual(new Decimal("1.2"));
 });
 
+test("parse removes м<sup>2</sup>", () => {
+    expect (clearPrice("1 м<sup>2</sup>")).toStrictEqual(new Decimal("1"));
+});
+
+test("parse removes м<sup>3</sup>", () => {
+    expect (clearPrice("1 м<sup>3</sup>")).toStrictEqual(new Decimal("1"));
+});
+
 test("parse strip tags", () => {
     expect (clearPrice("5<h1>fff</h1>")).toStrictEqual(new Decimal("5"));
 });
