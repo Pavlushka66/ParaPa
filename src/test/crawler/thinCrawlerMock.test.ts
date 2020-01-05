@@ -1,5 +1,5 @@
 import fetch from 'node-fetch';
-import { thinGetNodeText } from "../../crawler/thin/thinCrawler";
+import { thinGetNodeText } from "../../crawler/thinCrawler/thinCrawler";
 import { IPageRequestModel } from '../../models/pageRequestModel';
 import { ICookie } from '../../models/cookie';
 

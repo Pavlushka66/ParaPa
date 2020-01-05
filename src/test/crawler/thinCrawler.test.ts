@@ -1,5 +1,5 @@
 import { IPageRequestModel } from "../../models/pageRequestModel";
-import { thinGetNodeText, thinGetNodeTextFromHtml } from "../../crawler/thin/thinCrawler";
+import { thinGetNodeText, thinGetNodeTextFromHtml } from "../../crawler/thinCrawler/thinCrawler";
 
 test("example.com h1", async () => {
     const request: IPageRequestModel = {

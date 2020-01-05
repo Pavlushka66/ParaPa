@@ -1,6 +1,6 @@
 import { IPageRequestModel } from "../models/pageRequestModel";
 import { ICrawlerIndexItemModel, ICrawlerResult, CrowlerState } from "../models/crawlerIndexItemModel";
-import { thinGetNodeText } from "./thin/thinCrawler";
+import { thinGetNodeText } from "./thinCrawler/thinCrawler";
 import { formatCookies } from "../utils/crowlerHelpers";
 import { clearPrice } from "./priceParser/priceParser";
 
