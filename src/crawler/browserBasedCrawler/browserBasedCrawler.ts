@@ -1,24 +1,16 @@
 import { IPageRequestModel } from "models/pageRequestModel";
+import { Browser } from "./browser";
 
-export function thinGetNodeText(page: IPageRequestModel): Promise<string> {
+export function browserGetNodeText(page: IPageRequestModel): Promise<string> {
     return new Promise((resolve, reject) => {
-
-        // let requestParams: RequestInit | undefined;
-        // if (!!page.cookies && page.cookies.length > 0)
-        //     requestParams = {
-        //         headers: {
-        //             cookie: formatCookies(page.cookies) 
-        //         }
-        //     };
-
-        // fetch(page.url, requestParams)
-        //     .then(response => {
-        //         if (!response.ok)
-        //             reject(new Error(`HTML respnse state is not Ok, the real status [${response.status}:${response.statusText}], url:[${page.url}]`));
-        //         return response.text();
-        //     })
-        //     .then(html => {
-        //         resolve(thinGetNodeTextFromHtml(html, page.xpath))})
-        //     .catch(e => reject(e));
+        const browser = Browser.getInstance();
+        browser.openNewTab()
+        .then(tab => {
+            browser.openUrlInPage(tab, page.url)
+            .then(() => browser.waitElementTextByXpath(tab, page.xpath, 15000))
+            .then(value => resolve(value))
+            .catch(error => reject(error))
+            .finally(() => browser.closePage(tab))
+        }, error => reject(error));
     })
 }
