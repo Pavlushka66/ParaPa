@@ -3,15 +3,20 @@ import { ICrawlerIndexItemModel, ICrawlerResult, CrowlerState } from "../models/
 import { thinGetNodeText } from "./thinCrawler/thinCrawler";
 import { formatCookies } from "../utils/crowlerHelpers";
 import { clearPrice } from "./priceParser/priceParser";
+import { browserGetNodeText } from "./browserBasedCrawler/browserBasedCrawler";
 
 export default class CrawlerSupervisor {
     private crawlerIndex: { [key: string]: ICrawlerIndexItemModel } = {};
     private unprocessedPagesInIndex: number = 0;
+    private hostsForBrowser: string[] = [];
     private onWorkDone?(crawlerIndex: { [key: string]: ICrawlerIndexItemModel }): void;
 
-    public init(pages: IPageRequestModel[], 
+    public init(pages: IPageRequestModel[],
+        hostsForBrowser: string[],
         onWorkDone: (crawlerIndex: { [key: string]: ICrawlerIndexItemModel }) => void): void {
+
         this.onWorkDone = onWorkDone;
+        this.hostsForBrowser = hostsForBrowser;
         pages.map(page => this.push(page));
     }
 
@@ -23,10 +28,12 @@ export default class CrawlerSupervisor {
             const itemResult: ICrawlerResult = {
                 state: CrowlerState.Unprocessed
             };
+            const shouldUseBrowser = !!this.hostsForBrowser.find(host => page.url.indexOf(host) > -1);
             const item: ICrawlerIndexItemModel = {
                 key: page.url,
                 page: page,
-                result: itemResult
+                result: itemResult,
+                forBrowser: shouldUseBrowser
             };
             this.crawlerIndex[page.url] = item;
             this.unprocessedPagesInIndex++;
@@ -41,27 +48,28 @@ export default class CrawlerSupervisor {
     }
 
     private processItem(item: ICrawlerIndexItemModel) {
-        thinGetNodeText(item.page)
-            .then(
-                result => {
-                    try {
-                        var price = clearPrice(result);
-                        item.result.value = price;
-                        item.result.state = CrowlerState.Success;
-                    } catch (parsingError) {
-                        let e = new Error(`Error ocured while trying to parse price from page [${item.page.url}] value [${result}] [${parsingError.message}]`);
-                        e.stack = e.stack?.split('\n').slice(0, 2).join('\n') + '\n' +
-                            parsingError.stack;
-                        this.catchItemProcessingError(item, e)
-                    }
-                    try {
-                        this.checkWorkIsDone();
-                    } catch (callbackError) {
-                        console.log(`Error ocured while trying execute callback function [${callbackError.message}]`);
-                    }
-                },
-                e => this.catchItemProcessingError(item, e)
-            );
+        const promise: Promise<string> = item.forBrowser ?
+            (item.forBrowser ? browserGetNodeText(item.page) : thinGetNodeText(item.page))
+                .then(
+                    result => {
+                        try {
+                            var price = clearPrice(result);
+                            item.result.value = price;
+                            item.result.state = CrowlerState.Success;
+                        } catch (parsingError) {
+                            let e = new Error(`Error ocured while trying to parse price from page [${item.page.url}] value [${result}] [${parsingError.message}]`);
+                            e.stack = e.stack?.split('\n').slice(0, 2).join('\n') + '\n' +
+                                parsingError.stack;
+                            this.catchItemProcessingError(item, e)
+                        }
+                        try {
+                            this.checkWorkIsDone();
+                        } catch (callbackError) {
+                            console.log(`Error ocured while trying execute callback function [${callbackError.message}]`);
+                        }
+                    },
+                    e => this.catchItemProcessingError(item, e)
+                );
     }
 
     private catchItemProcessingError(item: ICrawlerIndexItemModel, error: Error): void {

@@ -5,6 +5,7 @@ export interface ICrawlerIndexItemModel {
     key: string;
     page: IPageRequestModel;
     result: ICrawlerResult;
+    forBrowser: boolean;
 }
 
 export interface ICrawlerResult {
