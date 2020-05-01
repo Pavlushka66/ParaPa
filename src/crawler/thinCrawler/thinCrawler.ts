@@ -27,9 +27,10 @@ export function thinGetNodeText(page: IPageRequestModel): Promise<string> {
 
 export function thinGetNodeTextFromHtml(html: string, xpath: string): string {
     const parser = new DOMParser();
-    const document = parser.parseFromString(html, 'text/xml');
+    const document = parser.parseFromString(html, 'text/html');
     var node = document
         .evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null)
         .singleNodeValue as HTMLElement;
-    return node.innerHTML;
+        
+    return node?.innerHTML;
 }

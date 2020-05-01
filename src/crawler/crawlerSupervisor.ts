@@ -4,6 +4,7 @@ import { thinGetNodeText } from "./thinCrawler/thinCrawler";
 import { formatCookies } from "../utils/crowlerHelpers";
 import { clearPrice } from "./priceParser/priceParser";
 import { browserGetNodeText } from "./browserBasedCrawler/browserBasedCrawler";
+import logger from "../infrastructure/logger/logger";
 
 export default class CrawlerSupervisor {
     private crawlerIndex: { [key: string]: ICrawlerIndexItemModel } = {};
@@ -47,36 +48,35 @@ export default class CrawlerSupervisor {
         return true;
     }
 
-    private processItem(item: ICrawlerIndexItemModel) {
-        const promise: Promise<string> = item.forBrowser ?
-            (item.forBrowser ? browserGetNodeText(item.page) : thinGetNodeText(item.page))
-                .then(
-                    result => {
-                        try {
-                            var price = clearPrice(result);
-                            item.result.value = price;
-                            item.result.state = CrowlerState.Success;
-                        } catch (parsingError) {
-                            let e = new Error(`Error ocured while trying to parse price from page [${item.page.url}] value [${result}] [${parsingError.message}]`);
-                            e.stack = e.stack?.split('\n').slice(0, 2).join('\n') + '\n' +
-                                parsingError.stack;
-                            this.catchItemProcessingError(item, e)
-                        }
-                        try {
-                            this.checkWorkIsDone();
-                        } catch (callbackError) {
-                            console.log(`Error ocured while trying execute callback function [${callbackError.message}]`);
-                        }
-                    },
-                    e => this.catchItemProcessingError(item, e)
-                );
+    private processItem(item: ICrawlerIndexItemModel): void {
+        (item.forBrowser ? browserGetNodeText(item.page) : thinGetNodeText(item.page))
+            .then(
+                result => {
+                    try {
+                        var price = clearPrice(result);
+                        item.result.value = price;
+                        item.result.state = CrowlerState.Success;
+                    } catch (parsingError) {
+                        let e = new Error(`Error ocured while trying to parse price from page [${item.page.url}] value [${result}] [${parsingError.message}]`);
+                        e.stack = e.stack?.split('\n').slice(0, 2).join('\n') + '\n' +
+                            parsingError.stack;
+                        this.catchItemProcessingError(item, e)
+                    }
+                    try {
+                        this.checkWorkIsDone();
+                    } catch (callbackError) {
+                        logger.error(`Error ocured while trying execute callback function [${callbackError.message}]`, callbackError);
+                    }
+                },
+                e => this.catchItemProcessingError(item, e)
+            );
     }
 
     private catchItemProcessingError(item: ICrawlerIndexItemModel, error: Error): void {
         item.result.state = CrowlerState.Error;
         item.result.error = error;
-        console.log(`Page process was failed, error ocured url:[${item.page.url}], xpath:[${item.page.xpath}], ` +
-            `cookies:[${formatCookies(item.page.cookies)}], error:[${error.message}]`);
+        logger.error(`Page process was failed, error ocured url:[${item.page.url}], xpath:[${item.page.xpath}], ` +
+            `cookies:[${formatCookies(item.page.cookies)}], error:[${error.message}]`, error);
         this.checkWorkIsDone();
     }
 

@@ -29,7 +29,7 @@ describe("crawlerSupervisor with node-fetch mocks", () => {
         };
 
         const crawlerSupervisor = new CrawlerSupervisor();
-        crawlerSupervisor.init(pages, superviorResultFunction);
+        crawlerSupervisor.init(pages, [], superviorResultFunction);
     });
 
     test("Price is cleaned", async () => {
@@ -47,7 +47,7 @@ describe("crawlerSupervisor with node-fetch mocks", () => {
         };
 
         const crawlerSupervisor = new CrawlerSupervisor();
-        crawlerSupervisor.init(pages, superviorResultFunction);
+        crawlerSupervisor.init(pages, [], superviorResultFunction);
     });
 
     test("Check cookies", async () => {
@@ -75,7 +75,7 @@ describe("crawlerSupervisor with node-fetch mocks", () => {
         };
 
         const crawlerSupervisor = new CrawlerSupervisor();
-        crawlerSupervisor.init(pages, superviorResultFunction);
+        crawlerSupervisor.init(pages, [], superviorResultFunction);
     });
 
     test("two pages", async () => {
@@ -104,6 +104,6 @@ describe("crawlerSupervisor with node-fetch mocks", () => {
         };
 
         const crawlerSupervisor = new CrawlerSupervisor();
-        crawlerSupervisor.init(pages, superviorResultFunction);
+        crawlerSupervisor.init(pages, [], superviorResultFunction);
     });
 });
