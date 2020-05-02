@@ -1,11 +1,12 @@
-import * as puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer'
+import { LaunchOptions } from 'puppeteer';
 
 export class Browser {
     private static instance: Browser;
     private static browser: puppeteer.Browser | undefined;
     private static instanceSalt: string;
     private static lastPageIndex: number = 0;
-    private static pageIndex: puppeteer.Page[];
+    private static pageIndex: puppeteer.Page[] = [];
 
     private constructor() {
         //https://gist.github.com/6174/6062387
@@ -23,21 +24,44 @@ export class Browser {
     public openNewTab(): Promise<IBrowserPage> {
         return new Promise((resolve, reject) => {
             if (!Browser.browser) {
-                puppeteer.launch().then(b => {
+                puppeteer.launch(this.getBrowserOptions()).then(b => {
                     Browser.browser = b;
+                    this.openNewTabInner()
+                        .then(r => resolve(r), e => reject(e));
                 }, e => reject(e));
+            } else {
+                this.openNewTabInner()
+                    .then(r => resolve(r), e => reject(e));
             }
-            Browser.browser!.newPage()
-                .then(p => {
-                    const page: IBrowserPage = {
-                        browserInstanceSalt: Browser.instanceSalt,
-                        browserPageIndex: Browser.lastPageIndex++
-                    }
-                    Browser.pageIndex[page.browserPageIndex] = p;
-                    resolve(page);
-                },
-                    e => reject(e));
         });
+    }
+
+    private openNewTabInner(): Promise<IBrowserPage> {
+        return new Promise((resolve, reject) => {
+            try {
+                if (!Browser.browser) {
+                    reject(new Error("browser is not initialized"));
+                }
+                Browser.browser!.newPage()
+                    .then(p => {
+                        const page: IBrowserPage = {
+                            browserInstanceSalt: Browser.instanceSalt,
+                            browserPageIndex: Browser.lastPageIndex++
+                        }
+                        Browser.pageIndex[page.browserPageIndex] = p;
+                        resolve(page);
+                    },
+                        e => reject(e));
+            } catch (e) {
+                reject(e);
+            }
+        });
+    }
+
+    private getBrowserOptions(): LaunchOptions {
+        return {
+            headless: true
+        } as LaunchOptions;
     }
 
     public openUrlInPage(page: IBrowserPage, url: string): Promise<void> {

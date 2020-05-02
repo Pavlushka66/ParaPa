@@ -4,16 +4,20 @@ import { ICookie } from '../../models/cookie';
 import CrawlerSupervisor from '../../crawler/crawlerSupervisor';
 import { ICrawlerIndexItemModel, ICrawlerResult, CrowlerState } from '../../models/crawlerIndexItemModel';
 import Decimal from 'decimal.js';
+import { browserGetNodeText } from '../../crawler/browserBasedCrawler/browserBasedCrawler';
 
 const { Response } = jest.requireActual('node-fetch');
 
-jest.mock('node-fetch', () => jest.fn());
+jest
+.mock('node-fetch')
+.mock('../../crawler/browserBasedCrawler/browserBasedCrawler');
 
 afterEach(() => {
     jest.clearAllMocks;
 });
 
 describe("crawlerSupervisor with node-fetch mocks", () => {
+    
     test("Simple get data", async () => {
         const expectedResponse = "<html><title>title</title><body><h1>123.45</h1></body></html>";
         (fetch as jest.MockedFunction<typeof fetch>).mockResolvedValueOnce(new Response(expectedResponse));
@@ -80,7 +84,7 @@ describe("crawlerSupervisor with node-fetch mocks", () => {
 
     test("two pages", async () => {
         const expectedResponse = "<html><title>title</title><body><h1>123.45</h1></body></html>";
-        (fetch as jest.MockedFunction<typeof fetch>).mockRejectedValue(new Response(expectedResponse));
+        (fetch as jest.MockedFunction<typeof fetch>).mockResolvedValue(new Response(expectedResponse));
         const pages: IPageRequestModel[] = [{
             url: "http://example.com",
             xpath: "//h1",
@@ -105,5 +109,27 @@ describe("crawlerSupervisor with node-fetch mocks", () => {
 
         const crawlerSupervisor = new CrawlerSupervisor();
         crawlerSupervisor.init(pages, [], superviorResultFunction);
+    });
+
+    test("use browser", async () => {
+        const expectedResponse = "<html><title>title</title><body><h1>123.45</h1></body></html>";
+        const mocked = (browserGetNodeText as jest.MockedFunction<typeof browserGetNodeText>);
+        mocked.mockResolvedValueOnce(expectedResponse);
+        const pages: IPageRequestModel[] = [{
+            url: "http://example.com",
+            xpath: "//h1"
+        }];
+
+        const superviorResultFunction = (crawlerIndex: { [key: string]: ICrawlerIndexItemModel }) => {
+            const item = crawlerIndex["http://example.com"];
+            expect(item?.result).not.toBeUndefined();
+            const result = item.result;
+            expect(result.state).toEqual(CrowlerState.Success);
+            expect(result.value).toEqual(new Decimal("123.45"));
+            expect(mocked).toHaveBeenCalledTimes(1);
+        };
+
+        const crawlerSupervisor = new CrawlerSupervisor();
+        crawlerSupervisor.init(pages, ["example.com"], superviorResultFunction);
     });
 });

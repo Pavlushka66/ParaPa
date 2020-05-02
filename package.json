@@ -10,7 +10,7 @@
     "app-root-path": "^3.0.0",
     "decimal.js": "^10.2.0",
     "node-fetch": "^2.6.0",
-    "puppeteer": "^2.0.0",
+    "puppeteer": "^2.1.1",
     "typescript": "^3.7.2",
     "winston": "^3.2.1"
   },
